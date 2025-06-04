@@ -81,11 +81,7 @@ function actualizarNavegacion() {
 }
 
 /**
- * Muestra un mensaje de retroalimentación al usuario en un elemento HTML específico.
- * @param {string} idElemento - El ID del elemento HTML donde se mostrará el mensaje.
- * @param {string} mensaje - El texto del mensaje a mostrar.
- * @param {boolean} esError - True si el mensaje es un error (para aplicar estilos de error).
- */
+ * Muestra un mensaje de retroalimentación al usuario en un elemento HTML específico. */
 function mostrarMensaje(idElemento, mensaje, esError = false) {
     const elemento = document.getElementById(idElemento);
     if (!elemento) {
@@ -112,17 +108,13 @@ function ocultarMensajes(idElemento) {
 }
 
 /**
- * Muestra un modal (elemento con display: none por defecto).
- * @param {string} idModal - El ID del modal a mostrar.
- */
+ * Muestra un modal (elemento con display: none por defecto). */
 function mostrarModal(idModal) {
     document.getElementById(idModal).style.display = 'block';
 }
 
 /**
- * Cierra un modal y limpia los mensajes asociados.
- * @param {string} idModal - El ID del modal a cerrar.
- */
+ * Cierra un modal y limpia los mensajes asociados. */
 function cerrarModal(idModal) {
     document.getElementById(idModal).style.display = 'none';
     // Limpiar mensajes específicos de modales al cerrarlos
@@ -133,9 +125,7 @@ function cerrarModal(idModal) {
 // --- Autenticación y Estado de la Sesión ---
 
 /**
- * Función auxiliar para manejar el éxito del login, guardando el token y actualizando la UI.
- * @param {object} userData - Los datos del usuario (incluyendo el token JWT si aplica).
- */
+ * Función auxiliar para manejar el éxito del login, guardando el token y actualizando la UI. */
 function handleLoginSuccess(userData) {
     // Si el backend devuelve un token JWT, guárdalo
     if (userData.jwtToken) {
@@ -742,11 +732,8 @@ async function mostrarGestionCampanasAdmin() {
     }
 }
 
-/**
- * Muestra el formulario modal para crear una nueva campaña.
- * Resetea el formulario y configura el botón para la acción de creación.
- */
 function mostrarFormularioCrearCampana() {
+    console.log("DEBUG: Función mostrarFormularioCrearCampana ha sido llamada.");
     const formulario = document.getElementById('campaign-admin-form');
     formulario.reset(); // Limpiar el formulario
     document.getElementById('campaign-form-title').textContent = 'Crear Nueva Campaña';
