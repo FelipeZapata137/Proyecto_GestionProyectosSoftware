@@ -1,7 +1,3 @@
-// app.js
-// Archivo JavaScript principal para la aplicación de Gestión de Campañas de Limpieza
-
-// URL base de la API de tu backend Spring Boot
 const API_BASE_URL = 'http://localhost:8080/api';
 // Variable global para almacenar los datos del usuario autenticado
 let usuarioActual = null;
@@ -81,7 +77,11 @@ function actualizarNavegacion() {
 }
 
 /**
- * Muestra un mensaje de retroalimentación al usuario en un elemento HTML específico. */
+ * Muestra un mensaje de retroalimentación al usuario en un elemento HTML específico.
+ * @param {string} idElemento - El ID del elemento HTML donde se mostrará el mensaje.
+ * @param {string} mensaje - El texto del mensaje a mostrar.
+ * @param {boolean} esError - True si el mensaje es un error (para aplicar estilos de error).
+ */
 function mostrarMensaje(idElemento, mensaje, esError = false) {
     const elemento = document.getElementById(idElemento);
     if (!elemento) {
@@ -108,13 +108,17 @@ function ocultarMensajes(idElemento) {
 }
 
 /**
- * Muestra un modal (elemento con display: none por defecto). */
+ * Muestra un modal (elemento con display: none por defecto).
+ * @param {string} idModal - El ID del modal a mostrar.
+ */
 function mostrarModal(idModal) {
     document.getElementById(idModal).style.display = 'block';
 }
 
 /**
- * Cierra un modal y limpia los mensajes asociados. */
+ * Cierra un modal y limpia los mensajes asociados.
+ * @param {string} idModal - El ID del modal a cerrar.
+ */
 function cerrarModal(idModal) {
     document.getElementById(idModal).style.display = 'none';
     // Limpiar mensajes específicos de modales al cerrarlos
@@ -125,7 +129,9 @@ function cerrarModal(idModal) {
 // --- Autenticación y Estado de la Sesión ---
 
 /**
- * Función auxiliar para manejar el éxito del login, guardando el token y actualizando la UI. */
+ * Función auxiliar para manejar el éxito del login, guardando el token y actualizando la UI.
+ * @param {object} userData - Los datos del usuario (incluyendo el token JWT si aplica).
+ */
 function handleLoginSuccess(userData) {
     // Si el backend devuelve un token JWT, guárdalo
     if (userData.jwtToken) {
@@ -403,7 +409,7 @@ async function actualizarPerfil(evento) {
         mostrarMensaje('profile-message', `Error de red: ${error.message}`, true);
         console.error("Error al actualizar perfil:", error);
     }
-} // <--- ¡Esta llave de cierre faltaba!
+}
 
 /**
  * Cambia la contraseña del usuario.
@@ -732,13 +738,16 @@ async function mostrarGestionCampanasAdmin() {
     }
 }
 
+/**
+ * Muestra el formulario modal para crear una nueva campaña.
+ * Resetea el formulario y configura el botón para la acción de creación.
+ */
 function mostrarFormularioCrearCampana() {
     console.log("DEBUG: Función mostrarFormularioCrearCampana ha sido llamada.");
     const formulario = document.getElementById('campaign-admin-form');
     formulario.reset(); // Limpiar el formulario
     document.getElementById('campaign-form-title').textContent = 'Crear Nueva Campaña';
     document.getElementById('campaign-form-submit-button').textContent = 'Crear Campaña';
-    document.getElementById('campaign-form-submit-button').onclick = crearCampana; // Asignar la función de creación
     document.getElementById('campaign-form-submit-button').dataset.mode = 'create'; // Establecer el modo
     document.getElementById('admin-campaign-id').value = ''; // Asegurar que no hay ID (para creación)
     document.getElementById('admin-campaign-estado').value = 'PLANIFICADA'; // Establecer estado por defecto
@@ -785,6 +794,7 @@ function formatDateToYYYYMMDD(dateString) {
  * @param {Event} evento - El evento de envío del formulario.
  */
 async function manejarEnvioCampana(evento) {
+    console.log("DEBUG: Función manejarEnvioCampana ha sido llamada.");
     evento.preventDefault();
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') {
         mostrarMensaje('campaign-form-message', 'No tienes permisos para realizar esta acción.', true);
@@ -807,7 +817,7 @@ async function manejarEnvioCampana(evento) {
     ocultarMensajes('campaign-form-message');
 
     try {
-        const token = localStorage.getElementById('jwtToken');
+        const token = localStorage.getItem('jwtToken');
         const headers = { 'Content-Type': 'application/json' };
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -1112,10 +1122,10 @@ async function mostrarCalendario() {
 
         // Obtener eventos (campañas) desde el backend
         const respuesta = await fetch(`${API_BASE_URL}/campanas/eventos`, { headers }); // Asume un endpoint para eventos de calendario
-        const eventos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar eventos de calendario.' }));
+        const datos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar eventos de calendario.' }));
 
         if (respuesta.ok) {
-            const formattedEvents = eventos.map(evento => ({
+            const formattedEvents = datos.map(evento => ({
                 id: evento.id,
                 title: evento.nombre,
                 start: evento.fechaInicio, // Asegúrate de que el backend envíe fechas en formato ISO (YYYY-MM-DD)
