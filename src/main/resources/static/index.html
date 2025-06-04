@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Campañas de Limpieza</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- FullCalendar CSS y JS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js'></script>
+</head>
+<body>
+<header>
+    <h1>Gestión de Campañas de Limpieza de Parques</h1>
+    <nav>
+        <ul id="main-nav">
+            <li id="nav-login"><a href="#" onclick="mostrarIniciarSesion()">Iniciar Sesión</a></li>
+            <li id="nav-register"><a href="#" onclick="mostrarRegistrarse()">Registrarse</a></li>
+            <li id="nav-profile" style="display:none;"><a href="#" onclick="mostrarPerfil()">Mi Perfil</a></li>
+            <li id="nav-campaigns" style="display:none;"><a href="#" onclick="mostrarCampanas()">Campañas</a></li>
+            <li id="nav-admin-campaigns" style="display:none;"><a href="#" onclick="mostrarGestionCampanasAdmin()">Gestión Campañas (Admin)</a></li>
+            <li id="nav-volunteers" style="display:none;"><a href="#" onclick="mostrarVoluntarios()">Voluntarios (Admin)</a></li>
+            <li id="nav-reports-admin" style="display:none;"><a href="#" onclick="mostrarReportesAdmin()">Reportes (Admin)</a></li>
+            <li id="nav-calendar" style="display:none;"><a href="#" onclick="mostrarCalendario()">Calendario</a></li>
+            <li id="nav-notifications" style="display:none;"><a href="#" onclick="mostrarNotificaciones()">Notificaciones</a></li>
+            <li id="nav-logout" style="display:none;"><a href="#" onclick="cerrarSesion()">Cerrar Sesión</a></li>
+        </ul>
+    </nav>
+    <span id="user-info"></span>
+</header>
+
+<main>
+    <section id="login-section" class="active">
+        <h2>Iniciar Sesión</h2>
+        <form id="login-form" action="/login" method="post">
+            <label for="login-username">Usuario:</label>
+            <input type="text" id="login-username" name="username" required>
+            <label for="login-password">Contraseña:</label>
+            <input type="password" id="login-password" name="password" required>
+            <button type="submit">Ingresar</button>
+            <p id="login-message" class="message"></p>
+        </form>
+    </section>
+
+    <section id="register-section" style="display:none;">
+        <h2>Registro de Voluntario</h2>
+        <form id="register-form">
+            <label for="reg-username">Nombre de Usuario:</label>
+            <input type="text" id="reg-username" name="nombreUsuario" required>
+            <label for="reg-password">Contraseña:</label>
+            <input type="password" id="reg-password" name="contrasena" required>
+            <label for="reg-nombre">Nombre:</label>
+            <input type="text" id="reg-nombre" name="nombre" required>
+            <label for="reg-apellido">Apellido:</label>
+            <input type="text" id="reg-apellido" name="apellido" required>
+            <label for="reg-email">Email:</label>
+            <input type="email" id="reg-email" name="email" required>
+            <label for="reg-telefono">Teléfono:</label>
+            <input type="tel" id="reg-telefono" name="telefono">
+            <button type="submit">Registrar</button>
+        </form>
+        <p id="register-message" class="message"></p>
+    </section>
+
+    <section id="profile-section" style="display:none;">
+        <h2>Mi Perfil</h2>
+        <form id="profile-form">
+            <label for="profile-id">ID:</label>
+            <input type="text" id="profile-id" disabled>
+            <label for="profile-username">Nombre de Usuario:</label>
+            <input type="text" id="profile-username" disabled>
+            <label for="profile-nombre">Nombre:</label>
+            <input type="text" id="profile-nombre" required>
+            <label for="profile-apellido">Apellido:</label>
+            <input type="text" id="profile-apellido" required>
+            <label for="profile-email">Email:</label>
+            <input type="email" id="profile-email" required>
+            <label for="profile-telefono">Teléfono:</label>
+            <input type="tel" id="profile-telefono">
+            <label for="profile-rol">Rol:</label>
+            <input type="text" id="profile-rol" disabled>
+            <label for="profile-calificacion">Calificación:</label>
+            <input type="text" id="profile-calificacion" disabled>
+            <label for="profile-activo">Activo:</label>
+            <input type="checkbox" id="profile-activo" disabled>
+            <button type="submit">Actualizar Perfil</button>
+        </form>
+        <p id="profile-message" class="message"></p>
+
+        <h3>Cambiar Contraseña</h3>
+        <form id="change-password-form">
+            <label for="current-password">Contraseña Actual:</label>
+            <input type="password" id="current-password" required>
+            <label for="new-password">Nueva Contraseña:</label>
+            <input type="password" id="new-password" required>
+            <label for="confirm-new-password">Confirmar Nueva Contraseña:</label>
+            <input type="password" id="confirm-new-password" required>
+            <button type="submit">Cambiar Contraseña</button>
+        </form>
+        <p id="change-password-message" class="message"></p>
+    </section>
+
+    <section id="campaigns-section" style="display:none;">
+        <h2>Campañas Disponibles</h2>
+        <div id="campaigns-list">
+            <p>Cargando campañas...</p>
+        </div>
+        <p id="campaigns-message" class="message"></p>
+
+        <div id="campaign-details-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-button" onclick="cerrarModal('campaign-details-modal')">&times;</span>
+                <h3 id="modal-campaign-title"></h3>
+                <p><strong>Descripción:</strong> <span id="modal-campaign-description"></span></p>
+                <p><strong>Ubicación:</strong> <span id="modal-campaign-ubicacion"></span></p>
+                <p><strong>Fecha Inicio:</strong> <span id="modal-campaign-fechaInicio"></span></p>
+                <p><strong>Fecha Fin:</strong> <span id="modal-campaign-fechaFin"></span></p>
+                <p><strong>Estado:</strong> <span id="modal-campaign-estado"></span></p>
+                <h4>Evidencias:</h4>
+                <div id="modal-campaign-evidences"></div>
+                <button id="modal-campaign-action-button" class="action-button"></button>
+                <p id="modal-action-message" class="message"></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="admin-campaigns-section" style="display:none;">
+        <h2>Gestión de Campañas (Admin)</h2>
+        <button onclick="mostrarFormularioCrearCampana()">Crear Nueva Campaña</button>
+        <div id="admin-campaigns-list">
+            <p>Cargando campañas para administración...</p>
+        </div>
+        <p id="admin-campaigns-message" class="message"></p>
+
+        <div id="campaign-form-modal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-button" onclick="cerrarModal('campaign-form-modal')">&times;</span>
+                <h3 id="campaign-form-title"></h3>
+                <form id="campaign-admin-form">
+                    <input type="hidden" id="admin-campaign-id">
+                    <label for="admin-campaign-nombre">Nombre:</label>
+                    <input type="text" id="admin-campaign-nombre" required>
+                    <label for="admin-campaign-descripcion">Descripción:</label>
+                    <textarea id="admin-campaign-descripcion" required></textarea>
+                    <label for="admin-campaign-ubicacion">Ubicación:</label>
+                    <input type="text" id="admin-campaign-ubicacion" required>
+                    <label for="admin-campaign-fechaInicio">Fecha Inicio:</label>
+                    <input type="date" id="admin-campaign-fechaInicio" required>
+                    <label for="admin-campaign-fechaFin">Fecha Fin:</label>
+                    <input type="date" id="admin-campaign-fechaFin" required>
+                    <label for="admin-campaign-estado">Estado:</label>
+                    <select id="admin-campaign-estado">
+                        <option value="PLANIFICADA">PLANIFICADA</option>
+                        <option value="ACTIVA">ACTIVA</option>
+                        <option value="FINALIZADA">FINALIZADA</option>
+                        <option value="CANCELADA">CANCELADA</option>
+                    </select>
+                    <button type="submit" id="campaign-form-submit-button"></button>
+                </form>
+                <p id="campaign-form-message" class="message"></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="admin-volunteers-section" style="display:none;">
+        <h2>Gestión de Voluntarios (Admin)</h2>
+        <div id="volunteers-list">
+            <p>Cargando voluntarios...</p>
+        </div>
+        <p id="volunteers-message" class="message"></p>
+    </section>
+
+    <section id="reports-section" style="display:none;">
+        <h2>Reportes (Admin)</h2>
+        <p id="reports-admin-loading" style="display:none;">Cargando reportes...</p>
+        <p id="reports-admin-error" class="message" style="color: red; display: none;"></p>
+        <div id="reports-content">
+            <h3>Resumen General de Campañas:</h3>
+            <p>Total de Campañas Registradas: <span id="total-campanas">Cargando...</span></p>
+            <p>Campañas Actualmente Activas: <span id="campanas-activas">Cargando...</span></p>
+            <p>Campañas Planificadas: <span id="campanas-planificadas">Cargando...</span></p>
+            <p>Campañas Finalizadas: <span id="campanas-finalizadas">Cargando...</span></p>
+            <p>Campañas Canceladas: <span id="campanas-canceladas">Cargando...</span></p>
+
+            <h3>Resumen de Usuarios:</h3>
+            <p>Total de Usuarios Registrados: <span id="total-usuarios">Cargando...</span></p>
+            <p>Total de Voluntarios: <span id="total-voluntarios">Cargando...</span></p>
+        </div>
+    </section>
+
+    <section id="calendar-section" style="display:none;">
+        <h2>Calendario de Eventos</h2>
+        <div id="fullcalendar-container"></div>
+        <p id="calendar-message" class="message"></p>
+    </section>
+
+    <section id="notifications-section" style="display:none;">
+        <h2>Mis Notificaciones</h2>
+        <div id="notifications-list">
+            <p>Cargando notificaciones...</p>
+        </div>
+        <p id="notifications-message" class="message"></p>
+    </section>
+</main>
+
+<script src="js/app.js"></script>
+</body>
+</html>
