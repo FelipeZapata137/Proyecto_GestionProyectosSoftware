@@ -34,7 +34,8 @@
 <main>
     <section id="login-section" class="active">
         <h2>Iniciar Sesión</h2>
-        <form id="login-form" action="/login" method="post">
+        <!-- CAMBIO CRUCIAL AQUÍ: Eliminado action y method, añadido onsubmit -->
+        <form id="login-form" onsubmit="iniciarSesion(event)">
             <label for="login-username">Usuario:</label>
             <input type="text" id="login-username" name="username" required>
             <label for="login-password">Contraseña:</label>
@@ -46,7 +47,7 @@
 
     <section id="register-section" style="display:none;">
         <h2>Registro de Voluntario</h2>
-        <form id="register-form">
+        <form id="register-form" onsubmit="registrar(event)"> <!-- Asegurarse que registrar también use onsubmit -->
             <label for="reg-username">Nombre de Usuario:</label>
             <input type="text" id="reg-username" name="nombreUsuario" required>
             <label for="reg-password">Contraseña:</label>
@@ -66,7 +67,7 @@
 
     <section id="profile-section" style="display:none;">
         <h2>Mi Perfil</h2>
-        <form id="profile-form">
+        <form id="profile-form" onsubmit="actualizarPerfil(event)"> <!-- Añadido onsubmit -->
             <label for="profile-id">ID:</label>
             <input type="text" id="profile-id" disabled>
             <label for="profile-username">Nombre de Usuario:</label>
@@ -90,7 +91,7 @@
         <p id="profile-message" class="message"></p>
 
         <h3>Cambiar Contraseña</h3>
-        <form id="change-password-form">
+        <form id="change-password-form" onsubmit="cambiarContrasena(event)"> <!-- Añadido onsubmit -->
             <label for="current-password">Contraseña Actual:</label>
             <input type="password" id="current-password" required>
             <label for="new-password">Nueva Contraseña:</label>
@@ -138,7 +139,7 @@
             <div class="modal-content">
                 <span class="close-button" onclick="cerrarModal('campaign-form-modal')">&times;</span>
                 <h3 id="campaign-form-title"></h3>
-                <form id="campaign-admin-form">
+                <form id="campaign-admin-form" onsubmit="manejarEnvioCampana(event)"> <!-- Añadido onsubmit -->
                     <input type="hidden" id="admin-campaign-id">
                     <label for="admin-campaign-nombre">Nombre:</label>
                     <input type="text" id="admin-campaign-nombre" required>
@@ -182,6 +183,9 @@
             <p>Campañas Actualmente Activas: <span id="campanas-activas">Cargando...</span></p>
             <p>Campañas Planificadas: <span id="campanas-planificadas">Cargando...</span></p>
             <p>Campañas Finalizadas: <span id="campanas-finalizadas">Cargando...</span></p>
+            <!-- El backend no devuelve 'campanasCanceladas' directamente en ReporteResumenDTO,
+                 pero puedes mantener este elemento si lo calculas en el frontend o lo obtienes de otra forma.
+                 Si no, puedes eliminarlo. -->
             <p>Campañas Canceladas: <span id="campanas-canceladas">Cargando...</span></p>
 
             <h3>Resumen de Usuarios:</h3>

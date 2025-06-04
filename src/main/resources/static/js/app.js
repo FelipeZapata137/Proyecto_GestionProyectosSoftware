@@ -1,6 +1,3 @@
-// app.js
-// Archivo JavaScript principal para la aplicación de Gestión de Campañas de Limpieza
-
 // URL base de la API de tu backend Spring Boot
 const API_BASE_URL = 'http://localhost:8080/api';
 // Variable global para almacenar los datos del usuario autenticado
@@ -212,6 +209,7 @@ async function verificarEstadoAutenticacion() {
  * @param {Event} evento - El evento de envío del formulario.
  */
 async function iniciarSesion(evento) {
+    console.log("DEBUG: Función iniciarSesion ha sido llamada."); // <--- ¡ESTA ES LA LÍNEA CLAVE!
     evento.preventDefault(); // Prevenir el envío por defecto del formulario HTML
     const formulario = document.getElementById('login-form');
     const datosFormulario = new FormData(formulario);
@@ -244,7 +242,6 @@ async function iniciarSesion(evento) {
         mostrarMensaje('login-message', `Error de red: ${error.message}. Verifica tu conexión o el servidor.`, true);
     }
 }
-
 
 /**
  * Maneja el proceso de registro de nuevos usuarios.

@@ -3,7 +3,8 @@ spring:
     name: ProyectoGestionProyectos # Nombre de tu aplicación Spring Boot
   datasource:
     # --- Configuración de la base de datos H2 para persistencia en archivo ---
-    # Esto hará que H2 guarde los datos en un archivo en el disco duro
+    # Esto hará que H2 guarde los datos en un archivo en tu disco duro,
+    # en lugar de mantenerlos solo en memoria.
     url: jdbc:h2:file:./data/gestioncampanas;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver # Driver para H2
     username: sa # Usuario de la base de datos
@@ -19,5 +20,10 @@ spring:
 
 # Configuración JWT
 jwt:
-  secret: TuClaveSecretaMuyLargaYSeguraParaJWTQueDebeTenerAlMenos256Bits
+  secret: YzZfMnQxXzVzLTNfN2QyXzQzYV82Yl81c181Y183Y183Y182Y183Y180Y181Y182Y183Y184Y185Y186Y187Y188Y189Y18AY18BY18CY18DY18EY18F
   expiration: 86400000 # 24 horas en milisegundos (24 * 60 * 60 * 1000)
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web.filter.CorsFilter: DEBUG # También para CORS
