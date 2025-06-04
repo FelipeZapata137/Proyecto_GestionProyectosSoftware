@@ -37,6 +37,7 @@ public class CampañaService {
         Notificacion notificacion = new Notificacion();
         notificacion.setIdUsuario(userId); // El ID del usuario que creó la campaña
         notificacion.setTitulo("Nueva Campaña Creada");
+        // Convertir el enum EstadoCampaña a String usando .name() para el mensaje
         notificacion.setMensaje("Se ha creado una nueva campaña: " + newCampaña.getNombre() + " en " + newCampaña.getUbicacion() + ".");
         notificacion.setFechaCreacion(LocalDateTime.now());
         notificacion.setLeida(false);
@@ -50,8 +51,8 @@ public class CampañaService {
         Campaña campaña = campañaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + id));
 
-        // Guardar el estado anterior para la notificación
-        String oldEstado = campaña.getEstado();
+        // Guardar el estado anterior para la notificación, convirtiendo el enum a String
+        String oldEstado = campaña.getEstado().name(); // CORRECCIÓN: Usar .name() para obtener el String del enum
 
         campaña.setNombre(campañaDetails.getNombre());
         campaña.setDescripcion(campañaDetails.getDescripcion());
@@ -66,7 +67,8 @@ public class CampañaService {
         Notificacion notificacion = new Notificacion();
         notificacion.setIdUsuario(userId); // El ID del usuario que actualizó la campaña
         notificacion.setTitulo("Campaña Actualizada");
-        notificacion.setMensaje("La campaña '" + updatedCampaña.getNombre() + "' ha sido actualizada. Estado anterior: " + oldEstado + ", Nuevo estado: " + updatedCampaña.getEstado() + ".");
+        // Convertir el nuevo estado del enum a String usando .name() para el mensaje
+        notificacion.setMensaje("La campaña '" + updatedCampaña.getNombre() + "' ha sido actualizada. Estado anterior: " + oldEstado + ", Nuevo estado: " + updatedCampaña.getEstado().name() + "."); // CORRECCIÓN: Usar .name()
         notificacion.setFechaCreacion(LocalDateTime.now());
         notificacion.setLeida(false);
         notificacionService.crearNotificacion(notificacion); // Guardar la notificación
