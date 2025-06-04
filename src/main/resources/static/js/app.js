@@ -1100,9 +1100,6 @@ async function mostrarReportesAdmin() {
 
 let calendar; // Variable global para la instancia del calendario
 
-/**
- * Muestra la sección del calendario y lo inicializa.
- */
 async function mostrarCalendario() {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     mostrarSeccion('calendar-section');
@@ -1121,15 +1118,21 @@ async function mostrarCalendario() {
         }
 
         // Obtener eventos (campañas) desde el backend
-        const respuesta = await fetch(`${API_BASE_URL}/campanas/eventos`, { headers }); // Asume un endpoint para eventos de calendario
-        const datos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar eventos de calendario.' }));
+        const respuesta = await fetch(`${API_BASE_URL}/campanas/eventos`, { headers });
+        const datos = await respuesta.json().catch(() => {
+            console.error("Error al parsear JSON de eventos de calendario.");
+            mostrarMensaje('calendar-message', 'Respuesta inválida del servidor al cargar eventos de calendario.', true);
+            return []; // Devolver un array vacío para evitar errores posteriores
+        });
 
         if (respuesta.ok) {
+            // CORRECCIÓN CLAVE AQUÍ: Formatear las fechas para FullCalendar
             const formattedEvents = datos.map(evento => ({
                 id: evento.id,
                 title: evento.nombre,
-                start: evento.fechaInicio, // Asegúrate de que el backend envíe fechas en formato ISO (YYYY-MM-DD)
-                end: evento.fechaFin,     // FullCalendar maneja bien las fechas ISO
+                // Usar formatDateToYYYYMMDD para asegurar el formato correcto para FullCalendar
+                start: formatDateToYYYYMMDD(evento.fechaInicio),
+                end: formatDateToYYYYMMDD(evento.fechaFin),
                 extendedProps: {
                     descripcion: evento.descripcion,
                     ubicacion: evento.ubicacion,
@@ -1162,12 +1165,11 @@ async function mostrarCalendario() {
                     alert(details); // Usar un modal personalizado en lugar de alert()
                 },
                 dateClick: function(info) {
-                    // Opcional: Abrir un modal para crear un evento en esa fecha
-                    // alert('Fecha clicada: ' + info.dateStr);
                 }
             });
             calendar.render();
         } else {
+            // Si la respuesta no es OK, mostrar el mensaje de error del backend
             mostrarMensaje('calendar-message', datos.mensaje || 'Error al cargar eventos del calendario.', true);
         }
     } catch (error) {
