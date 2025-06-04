@@ -1126,7 +1126,6 @@ async function mostrarCalendario() {
         });
 
         if (respuesta.ok) {
-            // CORRECCIÓN CLAVE AQUÍ: Formatear las fechas para FullCalendar
             const formattedEvents = datos.map(evento => ({
                 id: evento.id,
                 title: evento.nombre,
