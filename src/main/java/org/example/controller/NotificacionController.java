@@ -18,7 +18,7 @@ import java.util.List;
 public class NotificacionController {
 
     private final NotificacionService notificacionService;
-    private final UsuarioRepository usuarioRepository; // Necesario para getAuthenticatedUserId
+    private final UsuarioRepository usuarioRepository;
 
     public NotificacionController(NotificacionService notificacionService, UsuarioRepository usuarioRepository) {
         this.notificacionService = notificacionService;
@@ -35,7 +35,7 @@ public class NotificacionController {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new RuntimeException("Usuario no autenticado.");
         }
-        String username = authentication.getName(); // Obtener el nombre de usuario del principal
+        String username = authentication.getName();
         Usuario usuario = usuarioRepository.findByNombreUsuario(username)
                 .orElseThrow(() -> new RuntimeException("Usuario autenticado no encontrado en la base de datos."));
         return usuario.getId();
@@ -48,20 +48,24 @@ public class NotificacionController {
      * @return Una lista de notificaciones.
      */
     @GetMapping("/usuario/{idUsuario}")
-    @PreAuthorize("hasRole('ADMIN') or (#idUsuario == authentication.principal.id)") // Asegura que solo se ven las propias o por admin
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTARIO')") // Simplificado: la lógica de comparación de ID se maneja en el cuerpo
     public ResponseEntity<List<Notificacion>> getNotificacionesByUsuarioId(@PathVariable Long idUsuario) {
         try {
-            // Si no es ADMIN, verificar que el ID de la URL coincide con el usuario autenticado
-            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                    .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            // Si el usuario es VOLUNTARIO, asegurar que solo pide sus propias notificaciones
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            boolean isVoluntario = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_VOLUNTARIO"));
+
+            if (isVoluntario) {
                 Long authenticatedUserId = getAuthenticatedUserId();
                 if (!authenticatedUserId.equals(idUsuario)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // No puede ver notificaciones de otro
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Un voluntario no puede ver notificaciones de otro
                 }
             }
             List<Notificacion> notificaciones = notificacionService.getNotificacionesByUsuarioId(idUsuario);
             return ResponseEntity.ok(notificaciones);
         } catch (RuntimeException e) {
+            System.err.println("Error al obtener notificaciones: " + e.getMessage()); // Log para depuración
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -73,15 +77,16 @@ public class NotificacionController {
      * @return La notificación actualizada.
      */
     @PutMapping("/{id}/marcar-leida")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTARIO')") // Permite a ambos roles autenticados acceder
+    @PreAuthorize("hasAnyRole('ADMIN', 'VOLUNTARIO')")
     public ResponseEntity<Notificacion> marcarNotificacionLeida(@PathVariable Long id) {
         try {
-            Long authenticatedUserId = getAuthenticatedUserId(); // Obtener el ID del usuario que hace la petición
+            Long authenticatedUserId = getAuthenticatedUserId();
             Notificacion updatedNotificacion = notificacionService.marcarLeida(id, authenticatedUserId);
             return ResponseEntity.ok(updatedNotificacion);
-        } catch (SecurityException e) { // Capturar excepción si el usuario no es el propietario
+        } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (RuntimeException e) { // Capturar otras excepciones (ej. notificación no encontrada)
+        } catch (RuntimeException e) {
+            System.err.println("Error al marcar notificación como leída: " + e.getMessage()); // Log para depuración
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }

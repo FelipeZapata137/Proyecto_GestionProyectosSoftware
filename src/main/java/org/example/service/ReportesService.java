@@ -1,7 +1,7 @@
 package org.example.service;
 
 import org.example.dto.ReporteResumenDTO;
-import org.example.model.EstadoCampaña; // ¡Importar el enum!
+import org.example.model.EstadoCampaña;
 import org.example.repository.CampañaRepository;
 import org.example.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;

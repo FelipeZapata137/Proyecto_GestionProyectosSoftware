@@ -1,7 +1,7 @@
 package org.example.model;
 
 import jakarta.persistence.*;
-import lombok.Data; // Importación para @Data
+import lombok.Data;
 import lombok.NoArgsConstructor; // Importación para @NoArgsConstructor
 import lombok.AllArgsConstructor; // Importación para @AllArgsConstructor
 import com.fasterxml.jackson.annotation.JsonFormat;

@@ -38,7 +38,7 @@ public class AuthService {
         return usuarioRepository.save(nuevoUsuario);
     }
 
-    // Método de autenticación (suponiendo que es el que da los errores)
+    // Métod de autenticación
     public Usuario autenticar(String nombreUsuario, String contrasena) {
         Usuario usuario = usuarioRepository.findByNombreUsuario(nombreUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));

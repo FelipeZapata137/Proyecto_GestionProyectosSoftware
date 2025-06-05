@@ -30,8 +30,6 @@ public class UsuarioController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // DTO para la respuesta del usuario (recomendado para no exponer la contraseña)
-    // Se puede mover a un paquete 'dto' para reutilizarlo en AuthController
     public static class UsuarioDTO {
         private Long id;
         private String nombreUsuario;

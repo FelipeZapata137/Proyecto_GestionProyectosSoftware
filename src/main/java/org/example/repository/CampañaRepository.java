@@ -1,7 +1,7 @@
 package org.example.repository;
 
 import org.example.model.Campaña;
-import org.example.model.EstadoCampaña; // ¡Importar el enum!
+import org.example.model.EstadoCampaña;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
