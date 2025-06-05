@@ -4,10 +4,6 @@ let usuarioActual = null;
 
 // --- Funciones de Utilidad ---
 
-/**
- * Muestra una sección específica de la interfaz de usuario y oculta todas las demás.
- * @param {string} idSeccion - El ID de la sección HTML a mostrar.
- */
 function mostrarSeccion(idSeccion) {
     // Oculta todas las secciones dentro del elemento 'main'
     document.querySelectorAll('main section').forEach(seccion => {
@@ -29,11 +25,11 @@ function actualizarNavegacion() {
     const navCampanas = document.getElementById('nav-campaigns');
     const navGestionCampanasAdmin = document.getElementById('nav-admin-campaigns');
     const navVoluntariosAdmin = document.getElementById('nav-volunteers');
-    const navReportesAdmin = document.getElementById('nav-reports-admin'); // ID corregido
+    const navReportesAdmin = document.getElementById('nav-reports-admin');
     const navCalendario = document.getElementById('nav-calendar');
     const navNotificaciones = document.getElementById('nav-notifications');
     const navCerrarSesion = document.getElementById('nav-logout');
-    const infoUsuarioSpan = document.getElementById('user-info'); // Para mostrar el nombre de usuario
+    const infoUsuarioSpan = document.getElementById('user-info');
 
     if (usuarioActual) {
         // Usuario autenticado: Ocultar opciones de no logeado, mostrar opciones de logeado
@@ -51,7 +47,7 @@ function actualizarNavegacion() {
         if (usuarioActual.rol === 'ADMIN') {
             navGestionCampanasAdmin.style.display = 'block';
             navVoluntariosAdmin.style.display = 'block';
-            navReportesAdmin.style.display = 'block'; // Mostrar opción de reportes para Admin
+            navReportesAdmin.style.display = 'block';
         } else {
             // Ocultar opciones de admin para otros roles
             navGestionCampanasAdmin.style.display = 'none';
@@ -71,28 +67,20 @@ function actualizarNavegacion() {
         navCalendario.style.display = 'none';
         navNotificaciones.style.display = 'none';
         navCerrarSesion.style.display = 'none';
-        infoUsuarioSpan.textContent = ''; // Limpiar información de usuario
-        mostrarIniciarSesion(); // Por defecto, si no hay usuario, mostrar la sección de login
+        infoUsuarioSpan.textContent = '';
+        mostrarIniciarSesion();
     }
 }
 
-/**
- * Muestra un mensaje de retroalimentación al usuario en un elemento HTML específico.
- * @param {string} idElemento - El ID del elemento HTML donde se mostrará el mensaje.
- * @param {string} mensaje - El texto del mensaje a mostrar.
- * @param {boolean} esError - True si el mensaje es un error (para aplicar estilos de error).
- */
 function mostrarMensaje(idElemento, mensaje, esError = false) {
     const elemento = document.getElementById(idElemento);
     if (!elemento) {
         console.error(`Elemento con ID '${idElemento}' no encontrado para mostrar mensaje.`);
         return;
     }
-    elemento.textContent = mensaje; // Establecer el texto del mensaje
-    elemento.className = esError ? 'message error' : 'message success'; // Aplicar clase CSS para estilo
-    elemento.style.display = 'block'; // Asegurarse de que el mensaje sea visible
-    // Opcional: ocultar el mensaje después de X segundos (descomentar si se desea)
-    // setTimeout(() => { elemento.style.display = 'none'; }, 5000);
+    elemento.textContent = mensaje;
+    elemento.className = esError ? 'message error' : 'message success';
+    elemento.style.display = 'block';
 }
 
 /**
@@ -102,8 +90,8 @@ function mostrarMensaje(idElemento, mensaje, esError = false) {
 function ocultarMensajes(idElemento) {
     const elemento = document.getElementById(idElemento);
     if (elemento) {
-        elemento.textContent = ''; // Limpiar el texto
-        elemento.style.display = 'none'; // Ocultar el elemento
+        elemento.textContent = '';
+        elemento.style.display = 'none';
     }
 }
 
@@ -121,42 +109,28 @@ function mostrarModal(idModal) {
  */
 function cerrarModal(idModal) {
     document.getElementById(idModal).style.display = 'none';
-    // Limpiar mensajes específicos de modales al cerrarlos
     ocultarMensajes('modal-action-message');
     ocultarMensajes('campaign-form-message');
 }
 
 // --- Autenticación y Estado de la Sesión ---
 
-/**
- * Función auxiliar para manejar el éxito del login, guardando el token y actualizando la UI.
- * @param {object} userData - Los datos del usuario (incluyendo el token JWT si aplica).
- */
 function handleLoginSuccess(userData) {
-    // Si el backend devuelve un token JWT, guárdalo
     if (userData.jwtToken) {
         localStorage.setItem('jwtToken', userData.jwtToken);
     }
-    // Guarda los datos del usuario (sin el token si no quieres que esté en usuarioActual)
-    usuarioActual = { ...userData }; // Copia los datos del usuario
-    delete usuarioActual.jwtToken; // Elimina el token del objeto usuarioActual si lo tenía
+    usuarioActual = { ...userData };
+    delete usuarioActual.jwtToken;
 
     actualizarNavegacion();
-    // Redirigir al perfil o a la sección principal tras un login exitoso
-    mostrarPerfil(); // O podrías mostrarCampanas()
-    // Limpiar los parámetros de la URL una vez procesados
+    mostrarPerfil();
     history.replaceState({}, document.title, window.location.pathname);
 }
 
-/**
- * Verifica el estado de autenticación del usuario al cargar la página o después de acciones de login/logout.
- * Realiza una petición a un endpoint protegido para obtener los datos del usuario autenticado.
- */
 async function verificarEstadoAutenticacion() {
     try {
-        ocultarMensajes('login-message'); // Limpiar mensajes de login previos
+        ocultarMensajes('login-message');
 
-        // Verificar si hay parámetros de URL de Spring Security (ej. ?error o ?logout)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
             mostrarMensaje('login-message', 'Credenciales inválidas. Por favor, inténtalo de nuevo.', true);
@@ -164,11 +138,8 @@ async function verificarEstadoAutenticacion() {
             mostrarMensaje('login-message', 'Has cerrado sesión exitosamente.', false);
         }
 
-        // Si usas JWT y lo tienes en localStorage, verifica si es válido
         const token = localStorage.getItem('jwtToken');
         if (token) {
-            // Realizar una petición a un endpoint protegido (ej. /api/usuarios/me)
-            // para obtener los datos del usuario autenticado y validar el token.
             const respuesta = await fetch(`${API_BASE_URL}/usuarios/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -176,25 +147,22 @@ async function verificarEstadoAutenticacion() {
             });
 
             if (respuesta.ok) {
-                // Token válido y usuario autenticado: obtener sus detalles y actualizar la UI
                 const userData = await respuesta.json();
-                handleLoginSuccess({ ...userData, jwtToken: token }); // Re-añadir token si lo necesitas en handleLoginSuccess
+                handleLoginSuccess({ ...userData, jwtToken: token });
             } else {
-                // Token inválido o expirado: limpiar token y estado, mostrar login
-                localStorage.removeItem('jwtToken'); // Eliminar token inválido
+                localStorage.removeItem('jwtToken');
                 usuarioActual = null;
                 actualizarNavegacion();
                 mostrarIniciarSesion();
             }
         } else {
-            // No hay token en localStorage: no autenticado
             usuarioActual = null;
             actualizarNavegacion();
             mostrarIniciarSesion();
         }
     } catch (error) {
         console.error("Error al verificar estado de autenticación:", error);
-        localStorage.removeItem('jwtToken'); // En caso de error de red, limpiar token por si acaso
+        localStorage.removeItem('jwtToken');
         usuarioActual = null;
         actualizarNavegacion();
         mostrarMensaje('login-message', 'Error de conexión con el servidor. Inténtalo más tarde.', true);
@@ -202,67 +170,49 @@ async function verificarEstadoAutenticacion() {
     }
 }
 
-/**
- * Maneja el proceso de inicio de sesión.
- * Envía las credenciales al backend y guarda el token JWT si la autenticación es exitosa.
- * @param {Event} evento - El evento de envío del formulario.
- */
 async function iniciarSesion(evento) {
-    console.log("DEBUG: Función iniciarSesion ha sido llamada."); // <--- ¡ESTA ES LA LÍNEA CLAVE!
-    evento.preventDefault(); // Prevenir el envío por defecto del formulario HTML
+    console.log("DEBUG: Función iniciarSesion ha sido llamada.");
+    evento.preventDefault();
     const formulario = document.getElementById('login-form');
     const datosFormulario = new FormData(formulario);
     const credenciales = Object.fromEntries(datosFormulario.entries());
 
-    ocultarMensajes('login-message'); // Limpiar mensaje previo
+    ocultarMensajes('login-message');
 
     try {
-        // Realizar la petición POST al endpoint de login de tu backend
-        // Asume que tu backend tiene un endpoint como /api/auth/login que devuelve un JWT
         const respuesta = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credenciales)
         });
 
-        // Intentar parsear la respuesta JSON, incluso si es un error, por si el backend envía un mensaje
         const datos = await respuesta.json().catch(() => ({ message: respuesta.statusText || 'Error desconocido' }));
 
-        if (respuesta.ok) { // Código de estado 200-299
-            // Si el login es exitoso, los datos deberían contener el token JWT y la información del usuario
-            handleLoginSuccess(datos); // Llama a la función para guardar token y actualizar UI
+        if (respuesta.ok) {
+            handleLoginSuccess(datos);
             mostrarMensaje('login-message', '¡Inicio de sesión exitoso!', false);
-        } else { // Código de estado 4xx o 5xx
-            // Si el backend envía un mensaje de error en el JSON, usarlo
+        } else {
             mostrarMensaje('login-message', datos.message || 'Credenciales inválidas. Inténtalo de nuevo.', true);
         }
     } catch (error) {
-        // Manejo de errores de red o JSON inválido
         mostrarMensaje('login-message', `Error de red: ${error.message}. Verifica tu conexión o el servidor.`, true);
     }
 }
 
-
-/**
- * Maneja el proceso de registro de nuevos usuarios.
- * @param {Event} evento - El evento de envío del formulario.
- */
 async function registrar(evento) {
-    evento.preventDefault(); // Prevenir el envío por defecto del formulario HTML
+    evento.preventDefault();
     const formulario = document.getElementById('register-form');
     const datosFormulario = new FormData(formulario);
     const datosUsuario = Object.fromEntries(datosFormulario.entries());
 
-    // Asignar rol por defecto (los registros desde aquí siempre son voluntarios)
     datosUsuario.rol = 'VOLUNTARIO';
 
-    // Validar que la contraseña no esté vacía
     if (!datosUsuario.contrasena || datosUsuario.contrasena.trim() === '') {
         mostrarMensaje('register-message', 'La contraseña no puede estar vacía.', true);
         return;
     }
 
-    ocultarMensajes('register-message'); // Limpiar mensaje previo
+    ocultarMensajes('register-message');
 
     try {
         const respuesta = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -271,55 +221,30 @@ async function registrar(evento) {
             body: JSON.stringify(datosUsuario)
         });
 
-        // Intentar parsear la respuesta JSON, incluso si es un error, por si el backend envía un mensaje
         const datos = await respuesta.json().catch(() => ({ mensaje: respuesta.statusText || 'Error desconocido' }));
 
-        if (respuesta.ok) { // Código de estado 200-299
+        if (respuesta.ok) {
             mostrarMensaje('register-message', '¡Registro exitoso! Ahora puedes iniciar sesión.', false);
-            formulario.reset(); // Limpiar el formulario después del éxito
-            mostrarIniciarSesion(); // Redirigir al usuario a la sección de login
-        } else { // Código de estado 4xx o 5xx
-            // Si el backend envía un mensaje de error en el JSON, usarlo
+            formulario.reset();
+            mostrarIniciarSesion();
+        } else {
             mostrarMensaje('register-message', datos.mensaje || 'Error en el registro. Inténtalo de nuevo.', true);
         }
     } catch (error) {
-        // Manejo de errores de red o JSON inválido
         mostrarMensaje('register-message', `Error de red: ${error.message}. Verifica tu conexión o el servidor.`, true);
         console.error("Error al registrar:", error);
     }
 }
 
-/**
- * Maneja el proceso de cierre de sesión.
- * Realiza un POST a la URL de logout de Spring Security.
- */
 async function cerrarSesion() {
     try {
-        // Si usas JWT, deberías eliminarlo de localStorage
         localStorage.removeItem('jwtToken');
-
-        // Spring Security espera un POST a /logout para invalidar la sesión
-        // Si usas JWT puro, este endpoint puede no ser necesario o tener otra lógica.
-        const respuesta = await fetch('/logout', {
-            method: 'POST',
-            // Es buena práctica incluir el token CSRF si lo tienes habilitado en Spring Security
-            // headers: { 'X-CSRF-TOKEN': obtenerCsrfToken() } // Implementar obtenerCsrfToken si es necesario
-        });
-
-        if (respuesta.ok) {
-            // Logout exitoso, limpiar estado del frontend
-            usuarioActual = null;
-            actualizarNavegacion();
-            // Redirigir para que Spring Security complete el proceso y limpie la sesión del navegador
-            window.location.href = '/?logout';
-        } else {
-            console.error("Error al cerrar sesión:", respuesta.status, respuesta.statusText);
-            // Usar mostrarMensaje o un modal personalizado en lugar de alert()
-            alert('Error al cerrar sesión. Por favor, inténtalo de nuevo.');
-        }
+        usuarioActual = null;
+        actualizarNavegacion();
+        window.location.href = '/?logout';
     } catch (error) {
-        console.error("Error de red al cerrar sesión:", error);
-        alert('Error de conexión al intentar cerrar sesión. Inténtalo más tarde.');
+        console.error("Error al cerrar sesión:", error);
+        mostrarMensaje('login-message', 'Error al cerrar sesión. Por favor, inténtalo de nuevo.', true);
     }
 }
 
@@ -333,52 +258,43 @@ function mostrarIniciarSesion() {
 function mostrarRegistrarse() {
     mostrarSeccion('register-section');
     ocultarMensajes('register-message');
-    document.getElementById('register-form').reset(); // Limpiar formulario al mostrar
+    document.getElementById('register-form').reset();
 }
 
 // --- Perfil de Usuario ---
 
-/**
- * Muestra la sección del perfil del usuario y rellena el formulario con los datos del usuario actual.
- */
 async function mostrarPerfil() {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     mostrarSeccion('profile-section');
-    // Rellenar formulario de perfil con los datos del usuario actual
     document.getElementById('profile-id').value = usuarioActual.id;
     document.getElementById('profile-username').value = usuarioActual.nombreUsuario;
     document.getElementById('profile-nombre').value = usuarioActual.nombre;
     document.getElementById('profile-apellido').value = usuarioActual.apellido;
     document.getElementById('profile-email').value = usuarioActual.email;
-    document.getElementById('profile-telefono').value = usuarioActual.telefono || ''; // Manejar valor nulo
+    document.getElementById('profile-telefono').value = usuarioActual.telefono || '';
     document.getElementById('profile-rol').value = usuarioActual.rol;
     document.getElementById('profile-calificacion').value = usuarioActual.calificacion !== undefined ? usuarioActual.calificacion.toFixed(1) : 'N/A';
     document.getElementById('profile-activo').checked = usuarioActual.activo;
 
-    // Limpiar mensajes y formulario de cambio de contraseña al mostrar el perfil
     ocultarMensajes('profile-message');
     ocultarMensajes('change-password-message');
     document.getElementById('change-password-form').reset();
 }
 
-/**
- * Actualiza la información del perfil del usuario.
- * @param {Event} evento - El evento de envío del formulario.
- */
 async function actualizarPerfil(evento) {
     evento.preventDefault();
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
 
     const datosPerfil = {
         id: usuarioActual.id,
-        nombreUsuario: usuarioActual.nombreUsuario, // No se permite cambiar desde el frontend
+        nombreUsuario: usuarioActual.nombreUsuario,
         nombre: document.getElementById('profile-nombre').value.trim(),
         apellido: document.getElementById('profile-apellido').value.trim(),
         email: document.getElementById('profile-email').value.trim(),
         telefono: document.getElementById('profile-telefono').value.trim(),
-        rol: usuarioActual.rol, // No se permite cambiar desde el frontend
-        calificacion: usuarioActual.calificacion, // No se permite cambiar desde el frontend
-        activo: usuarioActual.activo // No se permite cambiar desde el frontend
+        rol: usuarioActual.rol,
+        calificacion: usuarioActual.calificacion,
+        activo: usuarioActual.activo
     };
     ocultarMensajes('profile-message');
 
@@ -398,10 +314,10 @@ async function actualizarPerfil(evento) {
         const datos = await respuesta.json().catch(() => ({ mensaje: respuesta.statusText || 'Error desconocido' }));
 
         if (respuesta.ok) {
-            usuarioActual = datos; // Actualizar el objeto de usuario actual con los datos modificados del backend
+            usuarioActual = datos;
             mostrarMensaje('profile-message', '¡Perfil actualizado exitosamente!', false);
-            actualizarNavegacion(); // Para actualizar el nombre de usuario si se muestra en la navegación
-            mostrarPerfil(); // Re-renderizar perfil con los nuevos datos (útil para campos disabled)
+            actualizarNavegacion();
+            mostrarPerfil();
         } else {
             mostrarMensaje('profile-message', datos.mensaje || 'Error al actualizar el perfil.', true);
         }
@@ -411,10 +327,6 @@ async function actualizarPerfil(evento) {
     }
 }
 
-/**
- * Cambia la contraseña del usuario.
- * @param {Event} evento - El evento de envío del formulario.
- */
 async function cambiarContrasena(evento) {
     evento.preventDefault();
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
@@ -444,7 +356,7 @@ async function cambiarContrasena(evento) {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
-                userId: usuarioActual.id, // ID del usuario logeado
+                userId: usuarioActual.id,
                 currentPassword: contrasenaActual,
                 newPassword: nuevaContrasena
             })
@@ -454,7 +366,7 @@ async function cambiarContrasena(evento) {
 
         if (respuesta.ok) {
             mostrarMensaje('change-password-message', '¡Contraseña cambiada exitosamente!', false);
-            document.getElementById('change-password-form').reset(); // Limpiar el formulario
+            document.getElementById('change-password-form').reset();
         } else {
             mostrarMensaje('change-password-message', datos.mensaje || 'Error al cambiar la contraseña. Verifica tu contraseña actual.', true);
         }
@@ -466,16 +378,12 @@ async function cambiarContrasena(evento) {
 
 // --- Campañas (para Voluntarios) ---
 
-/**
- * Muestra la sección de campañas disponibles para voluntarios.
- * Carga las campañas desde el backend y las muestra en cards.
- */
 async function mostrarCampanas() {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     mostrarSeccion('campaigns-section');
     const listaCampanas = document.getElementById('campaigns-list');
     ocultarMensajes('campaigns-message');
-    listaCampanas.innerHTML = '<p>Cargando campañas...</p>'; // Mensaje de carga inicial
+    listaCampanas.innerHTML = '<p>Cargando campañas...</p>';
 
     try {
         const token = localStorage.getItem('jwtToken');
@@ -491,10 +399,10 @@ async function mostrarCampanas() {
             if (datos.length === 0) {
                 listaCampanas.innerHTML = '<p>No hay campañas disponibles en este momento.</p>';
             } else {
-                listaCampanas.innerHTML = ''; // Limpiar contenido previo
+                listaCampanas.innerHTML = '';
                 datos.forEach(campana => {
                     const divCampana = document.createElement('div');
-                    divCampana.className = 'card'; // Clase CSS para el estilo de la tarjeta
+                    divCampana.className = 'card';
                     divCampana.innerHTML = `
                         <h3>${campana.nombre}</h3>
                         <p>${campana.descripcion ? campana.descripcion.substring(0, 100) + '...' : 'Sin descripción'}</p>
@@ -515,11 +423,6 @@ async function mostrarCampanas() {
     }
 }
 
-/**
- * Muestra los detalles de una campaña en un modal.
- * @param {string} idCampana - El ID de la campaña a mostrar.
- * @param {boolean} esContextoAdmin - Indica si la vista se abre desde el contexto de administración.
- */
 async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     const modal = document.getElementById('campaign-details-modal');
@@ -531,9 +434,8 @@ async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
     const estado = document.getElementById('modal-campaign-estado');
     const divEvidencias = document.getElementById('modal-campaign-evidences');
     const botonAccion = document.getElementById('modal-campaign-action-button');
-    ocultarMensajes('modal-action-message'); // Limpiar mensaje previo
+    ocultarMensajes('modal-action-message');
 
-    // Limpiar y resetear el contenido del modal
     titulo.textContent = 'Cargando...';
     descripcion.textContent = '';
     ubicacion.textContent = '';
@@ -543,7 +445,7 @@ async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
     divEvidencias.innerHTML = '';
     botonAccion.style.display = 'none';
 
-    mostrarModal('campaign-details-modal'); // Mostrar el modal
+    mostrarModal('campaign-details-modal');
 
     try {
         const token = localStorage.getItem('jwtToken');
@@ -556,25 +458,23 @@ async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
         const campana = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar detalles de campaña.' }));
 
         if (respuesta.ok) {
-            // Rellenar el modal con los datos de la campaña
             titulo.textContent = campana.nombre;
             descripcion.textContent = campana.descripcion;
             ubicacion.textContent = campana.ubicacion;
-            fechaInicio.textContent = campana.fechaInicio; // Asume que el formato es legible
-            fechaFin.textContent = campana.fechaFin;     // Asume que el formato es legible
+            fechaInicio.textContent = campana.fechaInicio;
+            fechaFin.textContent = campana.fechaFin;
             estado.textContent = campana.estado;
 
-            // Placeholder para evidencias (si se implementa en el futuro)
             divEvidencias.innerHTML = '<p>No hay evidencias para esta campaña.</p>';
 
-            // Lógica para el botón de inscripción/anulación (solo para voluntarios y fuera del contexto admin)
             if (!esContextoAdmin && usuarioActual.rol === 'VOLUNTARIO') {
-                const respuestaInscripcion = await fetch(`${API_BASE_URL}/campanas/${campana.id}/inscrito/${usuarioActual.id}`);
+                const respuestaInscripcion = await fetch(`${API_BASE_URL}/campanas/${campana.id}/inscrito/${usuarioActual.id}`, { headers }); // Añadir headers para la verificación
                 let estaInscrito = false;
                 if (respuestaInscripcion.ok) {
                     estaInscrito = await respuestaInscripcion.json();
                 } else {
                     console.warn(`No se pudo verificar la inscripción para campaña ${campana.id}:`, respuestaInscripcion.status);
+                    estaInscrito = false;
                 }
 
                 botonAccion.style.display = 'block';
@@ -586,7 +486,7 @@ async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
                     botonAccion.onclick = () => inscribirseCampana(campana.id);
                 }
             } else {
-                botonAccion.style.display = 'none'; // No mostrar el botón para admin o si no es voluntario
+                botonAccion.style.display = 'none';
             }
         } else {
             mostrarMensaje('modal-action-message', campana.mensaje || 'Error al cargar detalles de la campaña.', true);
@@ -597,10 +497,6 @@ async function mostrarDetallesCampana(idCampana, esContextoAdmin) {
     }
 }
 
-/**
- * Inscribe al usuario actual (voluntario) en una campaña.
- * @param {string} idCampana - El ID de la campaña.
- */
 async function inscribirseCampana(idCampana) {
     if (!usuarioActual || usuarioActual.rol !== 'VOLUNTARIO') {
         mostrarMensaje('modal-action-message', 'Debes ser un voluntario para inscribirte.', true);
@@ -624,11 +520,9 @@ async function inscribirseCampana(idCampana) {
 
         if (respuesta.ok) {
             mostrarMensaje('modal-action-message', '¡Inscripción exitosa!', false);
-            // Actualizar el botón a "Anular Inscripción"
             const botonAccion = document.getElementById('modal-campaign-action-button');
             botonAccion.textContent = 'Anular Inscripción';
-            botonAccion.onclick = () => anularInscripcion(campana.id);
-            // Recargar la lista de campañas si la sección está visible
+            botonAccion.onclick = () => anularInscripcion(idCampana);
             if (document.getElementById('campaigns-section').style.display === 'block') {
                 mostrarCampanas();
             }
@@ -641,10 +535,6 @@ async function inscribirseCampana(idCampana) {
     }
 }
 
-/**
- * Anula la inscripción del usuario actual (voluntario) en una campaña.
- * @param {string} idCampana - El ID de la campaña.
- */
 async function anularInscripcion(idCampana) {
     if (!usuarioActual || usuarioActual.rol !== 'VOLUNTARIO') {
         mostrarMensaje('modal-action-message', 'Debes ser un voluntario para anular inscripción.', true);
@@ -668,11 +558,9 @@ async function anularInscripcion(idCampana) {
 
         if (respuesta.ok) {
             mostrarMensaje('modal-action-message', '¡Inscripción anulada exitosamente!', false);
-            // Actualizar el botón a "Inscribirse"
             const botonAccion = document.getElementById('modal-campaign-action-button');
             botonAccion.textContent = 'Inscribirse';
             botonAccion.onclick = () => inscribirseCampana(idCampana);
-            // Recargar la lista de campañas si la sección está visible
             if (document.getElementById('campaigns-section').style.display === 'block') {
                 mostrarCampanas();
             }
@@ -688,10 +576,6 @@ async function anularInscripcion(idCampana) {
 
 // --- Gestión de Campañas (para Administradores) ---
 
-/**
- * Muestra la sección de gestión de campañas para administradores.
- * Carga todas las campañas desde el backend y las muestra con opciones de edición/eliminación.
- */
 async function mostrarGestionCampanasAdmin() {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') { mostrarIniciarSesion(); return; }
     mostrarSeccion('admin-campaigns-section');
@@ -706,7 +590,7 @@ async function mostrarGestionCampanasAdmin() {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const respuesta = await fetch(`${API_BASE_URL}/campanas`, { headers }); // Asume que un admin puede ver todas las campañas
+        const respuesta = await fetch(`${API_BASE_URL}/campanas`, { headers });
         const datos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar campañas para admin.' }));
 
         if (respuesta.ok) {
@@ -716,7 +600,7 @@ async function mostrarGestionCampanasAdmin() {
                 listaCampanas.innerHTML = '';
                 datos.forEach(campana => {
                     const divCampana = document.createElement('div');
-                    divCampana.className = 'card'; // Clase CSS para el estilo de la tarjeta
+                    divCampana.className = 'card';
                     divCampana.innerHTML = `
                         <h3>${campana.nombre}</h3>
                         <p>${campana.descripcion ? campana.descripcion.substring(0, 100) + '...' : 'Sin descripción'}</p>
@@ -745,12 +629,12 @@ async function mostrarGestionCampanasAdmin() {
 function mostrarFormularioCrearCampana() {
     console.log("DEBUG: Función mostrarFormularioCrearCampana ha sido llamada.");
     const formulario = document.getElementById('campaign-admin-form');
-    formulario.reset(); // Limpiar el formulario
+    formulario.reset();
     document.getElementById('campaign-form-title').textContent = 'Crear Nueva Campaña';
     document.getElementById('campaign-form-submit-button').textContent = 'Crear Campaña';
-    document.getElementById('campaign-form-submit-button').dataset.mode = 'create'; // Establecer el modo
-    document.getElementById('admin-campaign-id').value = ''; // Asegurar que no hay ID (para creación)
-    document.getElementById('admin-campaign-estado').value = 'PLANIFICADA'; // Establecer estado por defecto
+    document.getElementById('campaign-form-submit-button').dataset.mode = 'create';
+    document.getElementById('admin-campaign-id').value = '';
+    document.getElementById('admin-campaign-estado').value = 'PLANIFICADA';
     ocultarMensajes('campaign-form-message');
     mostrarModal('campaign-form-modal');
 }
@@ -774,25 +658,17 @@ function formatDateToDDMMYYYY(dateString) {
  */
 function formatDateToYYYYMMDD(dateString) {
     if (!dateString) return null;
-    // Si ya está en YYYY-MM-DD, devolverla tal cual
     if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         return dateString;
     }
-    // Si está en DD/MM/YYYY, convertirla
     const parts = dateString.split('/');
     if (parts.length === 3) {
         const [day, month, year] = parts;
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
-    return null; // Formato inválido
+    return null;
 }
 
-
-/**
- * Maneja la creación o actualización de una campaña desde el formulario de administración.
- * Determina la acción (crear o editar) basándose en el 'data-mode' del botón de envío.
- * @param {Event} evento - El evento de envío del formulario.
- */
 async function manejarEnvioCampana(evento) {
     console.log("DEBUG: Función manejarEnvioCampana ha sido llamada.");
     evento.preventDefault();
@@ -845,9 +721,9 @@ async function manejarEnvioCampana(evento) {
 
         if (respuesta.ok) {
             mostrarMensaje('campaign-form-message', `Campaña ${modo === 'create' ? 'creada' : 'actualizada'} exitosamente!`, false);
-            formulario.reset(); // Limpiar el formulario
+            formulario.reset();
             cerrarModal('campaign-form-modal');
-            mostrarGestionCampanasAdmin(); // Recargar la lista de campañas
+            mostrarGestionCampanasAdmin();
         } else {
             mostrarMensaje('campaign-form-message', datos.mensaje || `Error al ${modo === 'create' ? 'crear' : 'actualizar'} la campaña.`, true);
         }
@@ -857,20 +733,16 @@ async function manejarEnvioCampana(evento) {
     }
 }
 
-/**
- * Rellena el formulario modal de campaña con los datos de una campaña existente para su edición.
- * @param {string} idCampana - El ID de la campaña a editar.
- */
 async function editarCampana(idCampana) {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') { mostrarIniciarSesion(); return; }
     ocultarMensajes('campaign-form-message');
     const formulario = document.getElementById('campaign-admin-form');
-    formulario.reset(); // Limpiar el formulario
+    formulario.reset();
     document.getElementById('campaign-form-title').textContent = 'Editar Campaña';
     document.getElementById('campaign-form-submit-button').textContent = 'Guardar Cambios';
-    document.getElementById('campaign-form-submit-button').dataset.mode = 'edit'; // Establecer el modo
-    document.getElementById('admin-campaign-id').value = idCampana; // Establecer el ID de la campaña
-    mostrarModal('campaign-form-modal'); // Mostrar el modal
+    document.getElementById('campaign-form-submit-button').dataset.mode = 'edit';
+    document.getElementById('admin-campaign-id').value = idCampana;
+    mostrarModal('campaign-form-modal');
 
     try {
         const token = localStorage.getItem('jwtToken');
@@ -883,7 +755,6 @@ async function editarCampana(idCampana) {
         const campana = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar campaña para edición.' }));
 
         if (respuesta.ok) {
-            // Rellenar el formulario con los datos de la campaña
             document.getElementById('admin-campaign-nombre').value = campana.nombre;
             document.getElementById('admin-campaign-descripcion').value = campana.descripcion;
             document.getElementById('admin-campaign-ubicacion').value = campana.ubicacion;
@@ -902,16 +773,13 @@ async function editarCampana(idCampana) {
 }
 
 /**
- * Elimina una campaña.
- * @param {string} idCampana - El ID de la campaña a eliminar.
- */
+ * Elimina una campaña.*/
 async function eliminarCampana(idCampana) {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') {
         mostrarMensaje('admin-campaigns-message', 'No tienes permisos para eliminar campañas.', true);
         return;
     }
 
-    // Usar un modal de confirmación personalizado en lugar de alert/confirm
     if (!confirm('¿Estás seguro de que deseas eliminar esta campaña?')) {
         return;
     }
@@ -931,7 +799,7 @@ async function eliminarCampana(idCampana) {
 
         if (respuesta.ok) {
             mostrarMensaje('admin-campaigns-message', 'Campaña eliminada exitosamente.', false);
-            mostrarGestionCampanasAdmin(); // Recargar la lista
+            mostrarGestionCampanasAdmin();
         } else {
             const datos = await respuesta.json().catch(() => ({ mensaje: respuesta.statusText || 'Error desconocido' }));
             mostrarMensaje('admin-campaigns-message', datos.mensaje || 'Error al eliminar la campaña.', true);
@@ -945,10 +813,6 @@ async function eliminarCampana(idCampana) {
 
 // --- Gestión de Voluntarios (para Administradores) ---
 
-/**
- * Muestra la sección de gestión de voluntarios para administradores.
- * Carga todos los usuarios con rol 'VOLUNTARIO' y los muestra.
- */
 async function mostrarVoluntarios() {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') { mostrarIniciarSesion(); return; }
     mostrarSeccion('admin-volunteers-section');
@@ -963,7 +827,6 @@ async function mostrarVoluntarios() {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Asume que tienes un endpoint para obtener usuarios por rol o todos los usuarios
         const respuesta = await fetch(`${API_BASE_URL}/usuarios?rol=VOLUNTARIO`, { headers });
         const datos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar voluntarios.' }));
 
@@ -997,11 +860,6 @@ async function mostrarVoluntarios() {
     }
 }
 
-/**
- * Activa o desactiva el estado de un voluntario.
- * @param {string} idVoluntario - El ID del voluntario.
- * @param {boolean} estadoActual - El estado actual del voluntario (activo/inactivo).
- */
 async function toggleEstadoVoluntario(idVoluntario, estadoActual) {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') {
         mostrarMensaje('volunteers-message', 'No tienes permisos para cambiar el estado de voluntarios.', true);
@@ -1011,7 +869,6 @@ async function toggleEstadoVoluntario(idVoluntario, estadoActual) {
     const nuevoEstado = !estadoActual;
     const mensajeConfirmacion = nuevoEstado ? '¿Estás seguro de que deseas ACTIVAR este voluntario?' : '¿Estás seguro de que deseas DESACTIVAR este voluntario?';
 
-    // Usar un modal de confirmación personalizado en lugar de alert/confirm
     if (!confirm(mensajeConfirmacion)) {
         return;
     }
@@ -1024,17 +881,15 @@ async function toggleEstadoVoluntario(idVoluntario, estadoActual) {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Asume que tienes un endpoint PUT para actualizar el estado del usuario
-        // Podrías necesitar un DTO específico para esto en el backend si no es un PATCH
         const respuesta = await fetch(`${API_BASE_URL}/usuarios/${idVoluntario}/estado`, {
-            method: 'PUT', // O PATCH si tu backend lo soporta para cambios parciales
+            method: 'PUT',
             headers: headers,
-            body: JSON.stringify({ activo: nuevoEstado }) // Envía solo el campo a actualizar
+            body: JSON.stringify({ activo: nuevoEstado })
         });
 
         if (respuesta.ok) {
             mostrarMensaje('volunteers-message', `Voluntario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente.`, false);
-            mostrarVoluntarios(); // Recargar la lista
+            mostrarVoluntarios();
         } else {
             const datos = await respuesta.json().catch(() => ({ mensaje: respuesta.statusText || 'Error desconocido' }));
             mostrarMensaje('volunteers-message', datos.mensaje || 'Error al cambiar el estado del voluntario.', true);
@@ -1047,10 +902,6 @@ async function toggleEstadoVoluntario(idVoluntario, estadoActual) {
 
 // --- Reportes (para Administradores) ---
 
-/**
- * Muestra la sección de reportes para administradores.
- * Carga los datos de resumen desde el backend y los muestra.
- */
 async function mostrarReportesAdmin() {
     if (!usuarioActual || usuarioActual.rol !== 'ADMIN') { mostrarIniciarSesion(); return; }
     mostrarSeccion('reports-section');
@@ -1079,7 +930,6 @@ async function mostrarReportesAdmin() {
             document.getElementById('campanas-activas').textContent = datos.campanasActivas;
             document.getElementById('campanas-planificadas').textContent = datos.campanasPlanificadas;
             document.getElementById('campanas-finalizadas').textContent = datos.campanasFinalizadas;
-            // Si el backend no devuelve campanasCanceladas, puedes mostrar 0 o N/A
             document.getElementById('campanas-canceladas').textContent = datos.campanasCanceladas !== undefined ? datos.campanasCanceladas : 'N/A';
             document.getElementById('total-usuarios').textContent = datos.totalUsuarios;
             document.getElementById('total-voluntarios').textContent = datos.totalVoluntarios;
@@ -1098,7 +948,7 @@ async function mostrarReportesAdmin() {
 
 // --- Calendario ---
 
-let calendar; // Variable global para la instancia del calendario
+let calendar;
 
 async function mostrarCalendario() {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
@@ -1107,7 +957,7 @@ async function mostrarCalendario() {
     ocultarMensajes('calendar-message');
 
     if (calendar) {
-        calendar.destroy(); // Destruir la instancia anterior si existe
+        calendar.destroy();
     }
 
     try {
@@ -1117,19 +967,17 @@ async function mostrarCalendario() {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Obtener eventos (campañas) desde el backend
         const respuesta = await fetch(`${API_BASE_URL}/campanas/eventos`, { headers });
         const datos = await respuesta.json().catch(() => {
             console.error("Error al parsear JSON de eventos de calendario.");
             mostrarMensaje('calendar-message', 'Respuesta inválida del servidor al cargar eventos de calendario.', true);
-            return []; // Devolver un array vacío para evitar errores posteriores
+            return [];
         });
 
         if (respuesta.ok) {
             const formattedEvents = datos.map(evento => ({
                 id: evento.id,
                 title: evento.nombre,
-                // Usar formatDateToYYYYMMDD para asegurar el formato correcto para FullCalendar
                 start: formatDateToYYYYMMDD(evento.fechaInicio),
                 end: formatDateToYYYYMMDD(evento.fechaFin),
                 extendedProps: {
@@ -1137,13 +985,12 @@ async function mostrarCalendario() {
                     ubicacion: evento.ubicacion,
                     estado: evento.estado
                 },
-                // Colores basados en el estado (opcional)
                 color: getColorForEstado(evento.estado)
             }));
 
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                locale: 'es', // Establecer el idioma a español
+                locale: 'es',
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -1151,24 +998,23 @@ async function mostrarCalendario() {
                 },
                 events: formattedEvents,
                 eventClick: function(info) {
-                    // Muestra los detalles del evento al hacer clic
                     const event = info.event;
                     let details = `
                         <strong>Campaña:</strong> ${event.title}<br>
                         <strong>Descripción:</strong> ${event.extendedProps.descripcion || 'N/A'}<br>
                         <strong>Ubicación:</strong> ${event.extendedProps.ubicacion || 'N/A'}<br>
                         <strong>Estado:</strong> ${event.extendedProps.estado || 'N/A'}<br>
-                        <strong>Inicio:</strong> ${event.start.toLocaleDateString('es-ES')}<br>
+                        <strong>Inicio:</strong> ${event.start ? event.start.toLocaleDateString('es-ES') : 'N/A'}<br>
                         <strong>Fin:</strong> ${event.end ? event.end.toLocaleDateString('es-ES') : 'N/A'}
                     `;
-                    alert(details); // Usar un modal personalizado en lugar de alert()
+
+                    console.log("Detalles del evento:", details);
                 },
                 dateClick: function(info) {
                 }
             });
             calendar.render();
         } else {
-            // Si la respuesta no es OK, mostrar el mensaje de error del backend
             mostrarMensaje('calendar-message', datos.mensaje || 'Error al cargar eventos del calendario.', true);
         }
     } catch (error) {
@@ -1177,11 +1023,6 @@ async function mostrarCalendario() {
     }
 }
 
-/**
- * Función auxiliar para asignar colores a los eventos del calendario según su estado.
- * @param {string} estado - El estado de la campaña.
- * @returns {string} El color hexadecimal.
- */
 function getColorForEstado(estado) {
     switch (estado) {
         case 'PLANIFICADA':
@@ -1199,10 +1040,6 @@ function getColorForEstado(estado) {
 
 // --- Notificaciones ---
 
-/**
- * Muestra la sección de notificaciones del usuario.
- * Carga las notificaciones desde el backend y las muestra.
- */
 async function mostrarNotificaciones() {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     mostrarSeccion('notifications-section');
@@ -1217,7 +1054,6 @@ async function mostrarNotificaciones() {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Asume un endpoint para obtener notificaciones del usuario actual
         const respuesta = await fetch(`${API_BASE_URL}/notificaciones/usuario/${usuarioActual.id}`, { headers });
         const datos = await respuesta.json().catch(() => ({ mensaje: 'Respuesta inválida del servidor al cargar notificaciones.' }));
 
@@ -1228,7 +1064,7 @@ async function mostrarNotificaciones() {
                 listaNotificaciones.innerHTML = '';
                 datos.forEach(notificacion => {
                     const divNotificacion = document.createElement('div');
-                    divNotificacion.className = 'card notification-card'; // Clase CSS para notificaciones
+                    divNotificacion.className = 'card notification-card';
                     divNotificacion.innerHTML = `
                         <h4>${notificacion.titulo}</h4>
                         <p>${notificacion.mensaje}</p>
@@ -1248,10 +1084,6 @@ async function mostrarNotificaciones() {
     }
 }
 
-/**
- * Marca una notificación específica como leída.
- * @param {string} idNotificacion - El ID de la notificación a marcar.
- */
 async function marcarNotificacionLeida(idNotificacion) {
     if (!usuarioActual) { mostrarIniciarSesion(); return; }
     ocultarMensajes('notifications-message');
@@ -1263,13 +1095,13 @@ async function marcarNotificacionLeida(idNotificacion) {
         }
 
         const respuesta = await fetch(`${API_BASE_URL}/notificaciones/${idNotificacion}/marcar-leida`, {
-            method: 'PUT', // O PATCH
+            method: 'PUT',
             headers: headers
         });
 
         if (respuesta.ok) {
             mostrarMensaje('notifications-message', 'Notificación marcada como leída.', false);
-            mostrarNotificaciones(); // Recargar la lista de notificaciones
+            mostrarNotificaciones();
         } else {
             const datos = await respuesta.json().catch(() => ({ mensaje: respuesta.statusText || 'Error desconocido' }));
             mostrarMensaje('notifications-message', datos.mensaje || 'Error al marcar notificación como leída.', true);
@@ -1285,5 +1117,5 @@ async function marcarNotificacionLeida(idNotificacion) {
 
 // Se ejecuta cuando el DOM está completamente cargado
 document.addEventListener('DOMContentLoaded', () => {
-    verificarEstadoAutenticacion(); // Verifica si el usuario ya está autenticado
+    verificarEstadoAutenticacion();
 });

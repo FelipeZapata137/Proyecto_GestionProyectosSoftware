@@ -1,24 +1,29 @@
 package org.example.service;
 
 import org.example.model.Campaña;
-import org.example.model.Notificacion; // Importar Notificacion
+import org.example.model.Notificacion;
+import org.example.model.Usuario;
 import org.example.repository.CampañaRepository;
+import org.example.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime; // Importar LocalDateTime
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class CampañaService {
 
     private final CampañaRepository campañaRepository;
-    private final NotificacionService notificacionService; // Inyectar NotificacionService
+    private final NotificacionService notificacionService;
+    private final UsuarioRepository usuarioRepository;
 
-    // Constructor para inyección de dependencias
-    public CampañaService(CampañaRepository campañaRepository, NotificacionService notificacionService) {
+    public CampañaService(CampañaRepository campañaRepository, NotificacionService notificacionService, UsuarioRepository usuarioRepository) {
         this.campañaRepository = campañaRepository;
-        this.notificacionService = notificacionService; // Asignar NotificacionService
+        this.notificacionService = notificacionService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     public List<Campaña> getAllCampanas() {
@@ -29,30 +34,40 @@ public class CampañaService {
         return campañaRepository.findById(id);
     }
 
-    // Modificado para recibir el ID del usuario que crea la campaña
-    public Campaña createCampaña(Campaña campaña, Long userId) {
+    @Transactional // Asegura que la operación sea atómica (todas las notificaciones o ninguna)
+    public Campaña createCampaña(Campaña campaña, Long adminId) {
         Campaña newCampaña = campañaRepository.save(campaña);
 
-        // Crear una notificación para el administrador que creó la campaña
-        Notificacion notificacion = new Notificacion();
-        notificacion.setIdUsuario(userId); // El ID del usuario que creó la campaña
-        notificacion.setTitulo("Nueva Campaña Creada");
-        // Convertir el enum EstadoCampaña a String usando .name() para el mensaje
-        notificacion.setMensaje("Se ha creado una nueva campaña: " + newCampaña.getNombre() + " en " + newCampaña.getUbicacion() + ".");
-        notificacion.setFechaCreacion(LocalDateTime.now());
-        notificacion.setLeida(false);
-        notificacionService.crearNotificacion(notificacion); // Guardar la notificación
+        // 1. Notificación para el administrador que creó la campaña
+        Notificacion adminNotificacion = new Notificacion();
+        adminNotificacion.setIdUsuario(adminId);
+        adminNotificacion.setTitulo("Campaña Creada");
+        adminNotificacion.setMensaje("Has creado la campaña: " + newCampaña.getNombre() + " en " + newCampaña.getUbicacion() + ".");
+        adminNotificacion.setFechaCreacion(LocalDateTime.now());
+        adminNotificacion.setLeida(false);
+        notificacionService.crearNotificacion(adminNotificacion);
+
+        // 2. Notificación para TODOS los voluntarios sobre la nueva campaña
+        List<Usuario> voluntarios = usuarioRepository.findByRol("VOLUNTARIO");
+        for (Usuario voluntario : voluntarios) {
+            Notificacion voluntarioNotificacion = new Notificacion();
+            voluntarioNotificacion.setIdUsuario(voluntario.getId());
+            voluntarioNotificacion.setTitulo("¡Nueva Campaña Disponible!");
+            voluntarioNotificacion.setMensaje("Se ha publicado una nueva campaña: '" + newCampaña.getNombre() + "' en '" + newCampaña.getUbicacion() + "'. ¡Inscríbete!");
+            voluntarioNotificacion.setFechaCreacion(LocalDateTime.now());
+            voluntarioNotificacion.setLeida(false);
+            notificacionService.crearNotificacion(voluntarioNotificacion);
+        }
 
         return newCampaña;
     }
 
-    // Modificado para recibir el ID del usuario que actualiza la campaña
-    public Campaña updateCampaña(Long id, Campaña campañaDetails, Long userId) {
+    @Transactional
+    public Campaña updateCampaña(Long id, Campaña campañaDetails, Long adminId) {
         Campaña campaña = campañaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + id));
 
-        // Guardar el estado anterior para la notificación, convirtiendo el enum a String
-        String oldEstado = campaña.getEstado().name(); // CORRECCIÓN: Usar .name() para obtener el String del enum
+        String oldEstado = campaña.getEstado().name();
 
         campaña.setNombre(campañaDetails.getNombre());
         campaña.setDescripcion(campañaDetails.getDescripcion());
@@ -63,33 +78,118 @@ public class CampañaService {
 
         Campaña updatedCampaña = campañaRepository.save(campaña);
 
-        // Crear una notificación para el administrador que actualizó la campaña
-        Notificacion notificacion = new Notificacion();
-        notificacion.setIdUsuario(userId); // El ID del usuario que actualizó la campaña
-        notificacion.setTitulo("Campaña Actualizada");
-        // Convertir el nuevo estado del enum a String usando .name() para el mensaje
-        notificacion.setMensaje("La campaña '" + updatedCampaña.getNombre() + "' ha sido actualizada. Estado anterior: " + oldEstado + ", Nuevo estado: " + updatedCampaña.getEstado().name() + "."); // CORRECCIÓN: Usar .name()
-        notificacion.setFechaCreacion(LocalDateTime.now());
-        notificacion.setLeida(false);
-        notificacionService.crearNotificacion(notificacion); // Guardar la notificación
+        // Notificación para el administrador que actualizó la campaña
+        Notificacion adminNotificacion = new Notificacion();
+        adminNotificacion.setIdUsuario(adminId);
+        adminNotificacion.setTitulo("Campaña Actualizada");
+        adminNotificacion.setMensaje("La campaña '" + updatedCampaña.getNombre() + "' ha sido actualizada. Estado anterior: " + oldEstado + ", Nuevo estado: " + updatedCampaña.getEstado().name() + ".");
+        adminNotificacion.setFechaCreacion(LocalDateTime.now());
+        adminNotificacion.setLeida(false);
+        notificacionService.crearNotificacion(adminNotificacion);
+
+        // Notificación para los voluntarios INSCRITOS si la campaña se actualiza
+        Set<Usuario> voluntariosInscritos = updatedCampaña.getVoluntariosInscritos();
+        for (Usuario voluntario : voluntariosInscritos) {
+            Notificacion voluntarioNotificacion = new Notificacion();
+            voluntarioNotificacion.setIdUsuario(voluntario.getId());
+            voluntarioNotificacion.setTitulo("Actualización de Campaña: " + updatedCampaña.getNombre());
+            voluntarioNotificacion.setMensaje("¡Importante! La campaña '" + updatedCampaña.getNombre() + "' ha sido actualizada. Nuevo estado: " + updatedCampaña.getEstado().name() + ".");
+            voluntarioNotificacion.setFechaCreacion(LocalDateTime.now());
+            voluntarioNotificacion.setLeida(false);
+            notificacionService.crearNotificacion(voluntarioNotificacion);
+        }
 
         return updatedCampaña;
     }
 
-    // Modificado para recibir el ID del usuario que elimina la campaña
-    public void deleteCampaña(Long id, Long userId) {
+    @Transactional
+    public void deleteCampaña(Long id, Long adminId) {
         Campaña campañaToDelete = campañaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + id));
 
+        // Notificar a los voluntarios INSCRITOS antes de eliminar la campaña
+        Set<Usuario> voluntariosInscritos = campañaToDelete.getVoluntariosInscritos();
+        for (Usuario voluntario : voluntariosInscritos) {
+            Notificacion voluntarioNotificacion = new Notificacion();
+            voluntarioNotificacion.setIdUsuario(voluntario.getId());
+            voluntarioNotificacion.setTitulo("Campaña Eliminada: " + campañaToDelete.getNombre());
+            voluntarioNotificacion.setMensaje("La campaña '" + campañaToDelete.getNombre() + "' en la que estabas inscrito ha sido eliminada.");
+            voluntarioNotificacion.setFechaCreacion(LocalDateTime.now());
+            voluntarioNotificacion.setLeida(false);
+            notificacionService.crearNotificacion(voluntarioNotificacion);
+        }
+
         campañaRepository.deleteById(id);
 
-        // Crear una notificación para el administrador que eliminó la campaña
-        Notificacion notificacion = new Notificacion();
-        notificacion.setIdUsuario(userId); // El ID del usuario que eliminó la campaña
-        notificacion.setTitulo("Campaña Eliminada");
-        notificacion.setMensaje("La campaña '" + campañaToDelete.getNombre() + "' ha sido eliminada.");
-        notificacion.setFechaCreacion(LocalDateTime.now());
-        notificacion.setLeida(false);
-        notificacionService.crearNotificacion(notificacion); // Guardar la notificación
+        // Notificación para el administrador que eliminó la campaña
+        Notificacion adminNotificacion = new Notificacion();
+        adminNotificacion.setIdUsuario(adminId);
+        adminNotificacion.setTitulo("Campaña Eliminada");
+        adminNotificacion.setMensaje("Has eliminado la campaña: '" + campañaToDelete.getNombre() + "'.");
+        adminNotificacion.setFechaCreacion(LocalDateTime.now());
+        adminNotificacion.setLeida(false);
+        notificacionService.crearNotificacion(adminNotificacion);
+    }
+
+    /**
+     * Inscribe un voluntario a una campaña.*/
+    @Transactional
+    public boolean inscribirVoluntario(Long idCampaña, Long idVoluntario) {
+        Campaña campaña = campañaRepository.findById(idCampaña)
+                .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + idCampaña));
+        Usuario voluntario = usuarioRepository.findById(idVoluntario)
+                .orElseThrow(() -> new RuntimeException("Voluntario no encontrado con ID: " + idVoluntario));
+
+        if (campaña.getVoluntariosInscritos().add(voluntario)) { // Si se añade (no estaba ya)
+            campañaRepository.save(campaña);
+
+            // Notificación para el voluntario sobre su inscripción
+            Notificacion voluntarioNotificacion = new Notificacion();
+            voluntarioNotificacion.setIdUsuario(idVoluntario);
+            voluntarioNotificacion.setTitulo("¡Inscripción Exitosa!");
+            voluntarioNotificacion.setMensaje("Te has inscrito exitosamente en la campaña: '" + campaña.getNombre() + "'.");
+            voluntarioNotificacion.setFechaCreacion(LocalDateTime.now());
+            voluntarioNotificacion.setLeida(false);
+            notificacionService.crearNotificacion(voluntarioNotificacion);
+
+            return true;
+        }
+        return false; // Ya estaba inscrito
+    }
+
+    /**
+     * Anula la inscripción de un voluntario de una campaña. */
+    @Transactional
+    public boolean anularInscripcion(Long idCampaña, Long idVoluntario) {
+        Campaña campaña = campañaRepository.findById(idCampaña)
+                .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + idCampaña));
+        Usuario voluntario = usuarioRepository.findById(idVoluntario)
+                .orElseThrow(() -> new RuntimeException("Voluntario no encontrado con ID: " + idVoluntario));
+
+        if (campaña.getVoluntariosInscritos().remove(voluntario)) { // Si se elimina (estaba)
+            campañaRepository.save(campaña);
+
+            // Notificación para el voluntario sobre su anulación
+            Notificacion voluntarioNotificacion = new Notificacion();
+            voluntarioNotificacion.setIdUsuario(idVoluntario);
+            voluntarioNotificacion.setTitulo("Inscripción Anulada");
+            voluntarioNotificacion.setMensaje("Has anulado tu inscripción en la campaña: '" + campaña.getNombre() + "'.");
+            voluntarioNotificacion.setFechaCreacion(LocalDateTime.now());
+            voluntarioNotificacion.setLeida(false);
+            notificacionService.crearNotificacion(voluntarioNotificacion);
+
+            return true;
+        }
+        return false; // No estaba inscrito
+    }
+
+    /**
+     * Verifica si un voluntario está inscrito en una campaña. */
+
+    public boolean isVoluntarioInscrito(Long idCampaña, Long idVoluntario) {
+        return campañaRepository.findById(idCampaña)
+                .map(campana -> campana.getVoluntariosInscritos().stream()
+                        .anyMatch(voluntario -> voluntario.getId().equals(idVoluntario)))
+                .orElse(false);
     }
 }

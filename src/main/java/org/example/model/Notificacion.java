@@ -1,23 +1,31 @@
 package org.example.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import lombok.Data; // Para getters y setters
-import lombok.NoArgsConstructor; // ¡¡¡Para el constructor por defecto!!!
-import lombok.AllArgsConstructor; // Opcional, para un constructor con todos los argumentos
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "notificaciones")
-@Data // Genera getters, setters, toString, equals, hashCode
-@NoArgsConstructor // ¡¡¡Genera el constructor por defecto sin argumentos!!!
-@AllArgsConstructor // Opcional, genera un constructor con todos los argumentos
 public class Notificacion {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "id_usuario", nullable = false)
     private Long idUsuario;
+
     private String titulo;
     private String mensaje;
+
+    @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
-    private boolean leida;
+
+    private boolean leida; // Indica si la notificación ha sido leída
 }

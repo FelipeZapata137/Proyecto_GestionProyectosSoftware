@@ -2,46 +2,49 @@ package org.example.service;
 
 import org.example.model.Notificacion;
 import org.example.repository.NotificacionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class NotificacionService {
 
     private final NotificacionRepository notificacionRepository;
 
-    @Autowired
     public NotificacionService(NotificacionRepository notificacionRepository) {
         this.notificacionRepository = notificacionRepository;
     }
 
-    public List<Notificacion> getNotificacionesByUserId(Long idUsuario) {
-        // Ordena por fecha de creación descendente para ver las más nuevas primero
+    public List<Notificacion> getNotificacionesByUsuarioId(Long idUsuario) {
+        // Ordena por fecha de creación descendente para mostrar las más recientes primero
         return notificacionRepository.findByIdUsuarioOrderByFechaCreacionDesc(idUsuario);
     }
 
     public Notificacion crearNotificacion(Notificacion notificacion) {
-        // Establecer la fecha de creación si no está ya establecida
-        if (notificacion.getFechaCreacion() == null) {
-            notificacion.setFechaCreacion(LocalDateTime.now());
-        }
-        // Las nuevas notificaciones generalmente no están leídas
-        notificacion.setLeida(false);
         return notificacionRepository.save(notificacion);
     }
 
-    public boolean marcarComoLeida(Long idNotificacion) {
-        Optional<Notificacion> optionalNotificacion = notificacionRepository.findById(idNotificacion);
-        if (optionalNotificacion.isPresent()) {
-            Notificacion notificacion = optionalNotificacion.get();
-            notificacion.setLeida(true);
-            notificacionRepository.save(notificacion);
-            return true;
+    /**
+     * Marca una notificación como leída.
+     * @param idNotificacion El ID de la notificación a marcar.
+     * @param authenticatedUserId El ID del usuario que está intentando marcarla como leída.
+     * @return La notificación actualizada.
+     * @throws RuntimeException si la notificación no se encuentra.
+     * @throws SecurityException si el usuario autenticado no es el propietario de la notificación.
+     */
+    @Transactional
+    public Notificacion marcarLeida(Long idNotificacion, Long authenticatedUserId) {
+        Notificacion notificacion = notificacionRepository.findById(idNotificacion)
+                .orElseThrow(() -> new RuntimeException("Notificación no encontrada con ID: " + idNotificacion));
+
+        // Validación de seguridad: Asegurarse de que el usuario autenticado es el propietario de la notificación
+        if (!notificacion.getIdUsuario().equals(authenticatedUserId)) {
+            throw new SecurityException("No tienes permiso para marcar esta notificación como leída.");
         }
-        return false;
+
+        notificacion.setLeida(true); // Marcar como leída
+        return notificacionRepository.save(notificacion);
     }
+
 }

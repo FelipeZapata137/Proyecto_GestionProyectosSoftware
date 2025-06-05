@@ -8,10 +8,6 @@ import java.util.List;
 
 @Repository
 public interface NotificacionRepository extends JpaRepository<Notificacion, Long> {
-
-    // Métod para encontrar notificaciones por el ID del usuario
+    // Métod para encontrar notificaciones por ID de usuario, ordenadas por fecha de creación descendente
     List<Notificacion> findByIdUsuarioOrderByFechaCreacionDesc(Long idUsuario);
-
-    // Métod opcional para encontrar notificaciones no leídas por el ID del usuario
-    List<Notificacion> findByIdUsuarioAndLeidaFalseOrderByFechaCreacionDesc(Long idUsuario);
 }
